@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="mn">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Төрсөн өдрийн шидэт мэндчилгээ</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      min-height: 100vh;
+      font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+      color: #ffffff;
+      background: radial-gradient(circle at 50% 15%, #2b1854 0%, #140b2e 55%, #090517 100%);
+      overflow-x: hidden;
+      position: relative;
+      padding-bottom: 150px;
+    }
+
+    /* Салют болон гялалзах одод */
+    #fx-canvas {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 2;
+    }
+
+    .container {
+      position: relative;
+      z-index: 5;
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 36px 18px 40px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+    }
+
+    /* Шидэт савааны хэсэг */
+    .wand-title {
+      font-size: clamp(1.5rem, 3.5vw, 2.3rem);
+      font-weight: 700;
+      margin-bottom: 16px;
+      text-shadow: 0 4px 18px rgba(255, 190, 255, 0.45);
+    }
+
+    .wand-btn {
+      background: linear-gradient(90deg, #ff5f8f, #ff9944);
+      color: #ffffff;
+      border: none;
+      border-radius: 999px;
+      padding: 13px 32px;
+      font-size: 1.05rem;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 8px 25px rgba(255, 95, 143, 0.45);
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .wand-btn:hover {
+      transform: translateY(-2px) scale(1.03);
+      box-shadow: 0 12px 30px rgba(255, 153, 68, 0.55);
+    }
+
+    .wand-btn:active {
+      transform: scale(0.97);
+    }
+
+    .divider {
+      width: 100%;
+      max-width: 760px;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, rgba(255, 200, 120, 0.65), transparent);
+      margin: 28px 0 32px;
+    }
+
+    /* 3 Polaroid зураг */
+    .polaroid-gallery {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 22px;
+      margin-bottom: 34px;
+    }
+
+    .polaroid-frame {
+      background: #fffdf9;
+      padding: 12px 12px 34px;
+      border-radius: 6px;
+      width: 225px;
+      box-shadow: 0 14px 30px rgba(0, 0, 0, 0.45);
+      transition: transform 0.3s ease;
+    }
+
+    .polaroid-frame:nth-child(1) { transform: rotate(-2deg); }
+    .polaroid-frame:nth-child(2) { transform: rotate(1.5deg); }
+    .polaroid-frame:nth-child(3) { transform: rotate(-1.5deg); }
+
+    .polaroid-frame:hover {
+      transform: translateY(-6px) rotate(0deg) scale(1.03);
+    }
+
+    .polaroid-frame img {
+      width: 100%;
+      height: 195px;
+      object-fit: cover;
+      object-position: top;
+      border-radius: 4px;
+      display: block;
+      background: #2b2346;
+    }
+
+    .caption {
+      margin-top: 10px;
+      color: #c93b6b;
+      font-style: italic;
+      font-weight: 700;
+      font-size: 0.98rem;
+    }
+
+    /* Мэндчилгээний карт */
+    .greeting-card {
+      background: rgba(16, 10, 34, 0.78);
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      backdrop-filter: blur(8px);
+      border-radius: 16px;
+      padding: 26px 28px;
+      max-width: 640px;
+      width: 100%;
+      box-shadow: 0 14px 35px rgba(0, 0, 0, 0.45);
+    }
+
+    .greeting-card h1 {
+      font-size: clamp(1.5rem, 3.6vw, 2.25rem);
+      letter-spacing: 0.5px;
+      margin-bottom: 8px;
+    }
+
+    .greeting-name {
+      font-family: "Brush Script MT", "Segoe Script", cursive;
+      font-size: clamp(1.5rem, 3.2vw, 2.1rem);
+      color: #ffd166;
+      margin-bottom: 12px;
+    }
+
+    .greeting-text {
+      color: #e6defa;
+      font-size: 1rem;
+      line-height: 1.55;
+    }
+
+    /* Доод хэсгийн бүтээлэг, бялуу, бэлэг */
+    .table-area {
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      height: 112px;
+      background: repeating-conic-gradient(#ff6b8b 0% 25%, #ffffff 0% 50%) 0 0 / 28px 28px;
+      border-top: 3px solid rgba(255, 255, 255, 0.65);
+      display: flex;
+      align-items: center;
+      justify-content: space-around;
+      padding: 0 20px;
+      z-index: 4;
+    }
+
+    .gift-box, .cake-box {
+      cursor: pointer;
+      user-select: none;
+      transition: transform 0.25s ease;
+    }
+
+    .gift-box:hover, .cake-box:hover {
+      transform: scale(1.08);
+    }
+
+    .gift-emoji {
+      font-size: 2.5rem;
+      filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.35));
+    }
+
+    .cake-ui {
+      background: #ff85b3;
+      border: 2px solid #ffffff;
+      border-radius: 14px 14px 8px 8px;
+      padding: 8px 22px 10px;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .candles {
+      display: flex;
+      gap: 10px;
+      font-size: 1rem;
+    }
+
+    .candle-flame.blown {
+      opacity: 0.25;
+      filter: grayscale(1);
+    }
+
+    .cake-hint {
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: #fff;
+      background: rgba(0, 0, 0, 0.25);
+      padding: 2px 10px;
+      border-radius: 999px;
+    }
+
+    /* Попап зурвас */
+    .toast {
+      position: fixed;
+      top: 22px;
+      left: 50%;
+      transform: translateX(-50%) translateY(-20px);
+      background: rgba(25, 15, 52, 0.94);
+      border: 1px solid #ffd166;
+      color: #fff;
+      padding: 12px 22px;
+      border-radius: 999px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      opacity: 0;
+      pointer-events: none;
+      transition: all 0.3s ease;
+      z-index: 20;
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+  </style>
+</head>
+<body>
+  <canvas id="fx-canvas"></canvas>
+  <div id="toast" class="toast"></div>
+
+  <div class="container">
+    <div class="wand-title">✨ Шидэт саваагаа даллаарай ✨</div>
+    <button id="wand-btn" class="wand-btn" type="button">🪄 Саваагаа даллах</button>
+
+    <div class="divider"></div>
+
+    <!-- Зургуудын хэсэг: images/ фолдер доторх зургуудаа энд холбоно -->
+    <div class="polaroid-gallery">
+      <div class="polaroid-frame">
+        <img src="images/nandia1.jpeg" alt="Зураг 1" />
+        <div class="caption">Баярын мөч ❤️</div>
+      </div>
+
+      <div class="polaroid-frame">
+        <img src="images/nandia2.jpeg" alt="Зураг 2" />
+        <div class="caption">Хайрт найз Нандинцэцэг-т 💐</div>
+      </div>
+
+      <div class="polaroid-frame">
+        <img src="images/nandia3.jpeg" alt="Зураг 3" />
+        <div class="caption">Нандинцэцэг-т ✨</div>
+      </div>
+    </div>
+
+    <div class="greeting-card">
+      <h1>ТӨРСӨН ӨДРИЙН МЭНД! 🎉</h1>
+      <div class="greeting-name">Хайрт найз Нандинцэцэг</div>
+      <p class="greeting-text">
+        Төрсөн өдрийн мэнд. Энэ хорвоогийн байж болох хамгийн сайхан бүхнийг чамдаа хүсье, хайртай шүү.
+      </p>
+    </div>
+  </div>
+
+  <div class="table-area">
+    <div id="gift-btn" class="gift-box" title="Бэлэг задлах">
+      <div class="gift-emoji">🎁</div>
+    </div>
+
+    <div id="cake-btn" class="cake-box" title="Лаа үлээх">
+      <div class="cake-ui">
+        <div class="candles">
+          <span class="candle-flame">🕯️</span>
+          <span class="candle-flame">🕯️</span>
+          <span class="candle-flame">🕯️</span>
+        </div>
+        <div id="cake-hint" class="cake-hint">Лаа үлээх</div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const canvas = document.getElementById("fx-canvas");
+    const ctx = canvas.getContext("2d");
+    const wandBtn = document.getElementById("wand-btn");
+    const giftBtn = document.getElementById("gift-btn");
+    const cakeBtn = document.getElementById("cake-btn");
+    const cakeHint = document.getElementById("cake-hint");
+    const toast = document.getElementById("toast");
+
+    let particles = [];
+    let blown = false;
+
+    function resize() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    }
+    window.addEventListener("resize", resize);
+    resize();
+
+    function showToast(msg) {
+      toast.textContent = msg;
+      toast.classList.add("show");
+      clearTimeout(showToast.timer);
+      showToast.timer = setTimeout(() => toast.classList.remove("show"), 2600);
+    }
+
+    function spawnBurst(x, y, count = 45) {
+      const colors = ["#ff6b8b", "#ffd166", "#70d6ff", "#c77dff", "#ffffff"];
+      for (let i = 0; i < count; i++) {
+        const angle = (Math.PI * 2 * i) / count + Math.random() * 0.3;
+        const speed = 2 + Math.random() * 5.5;
+        particles.push({
+          x,
+          y,
+          vx: Math.cos(angle) * speed,
+          vy: Math.sin(angle) * speed - 1.5,
+          size: 3 + Math.random() * 4,
+          color: colors[Math.floor(Math.random() * colors.length)],
+          alpha: 1,
+          decay: 0.015 + Math.random() * 0.015
+        });
+      }
+    }
+
+    function animate() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      particles = particles.filter((p) => p.alpha > 0.02);
+      for (const p of particles) {
+        p.x += p.vx;
+        p.y += p.vy;
+        p.vy += 0.08;
+        p.alpha -= p.decay;
+        ctx.save();
+        ctx.globalAlpha = Math.max(0, p.alpha);
+        ctx.fillStyle = p.color;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      }
+      requestAnimationFrame(animate);
+    }
+    animate();
+
+    wandBtn.addEventListener("click", () => {
+      const rect = wandBtn.getBoundingClientRect();
+      spawnBurst(rect.left + rect.width / 2, rect.top, 60);
+      spawnBurst(window.innerWidth * 0.3, window.innerHeight * 0.3, 40);
+      spawnBurst(window.innerWidth * 0.7, window.innerHeight * 0.3, 40);
+      showToast("✨ Шидэт салют буудлаа! Төрсөн өдрийн мэнд!");
+    });
+
+    giftBtn.addEventListener("click", () => {
+      const rect = giftBtn.getBoundingClientRect();
+      spawnBurst(rect.left + rect.width / 2, rect.top, 45);
+      showToast("🎁 Бэлэг задарлаа! Хамгийн сайхан бүхнийг хүсье!");
+    });
+
+    cakeBtn.addEventListener("click", () => {
+      blown = !blown;
+      document.querySelectorAll(".candle-flame").forEach((el) => {
+        el.classList.toggle("blown", blown);
+      });
+      if (blown) {
+        cakeHint.textContent = "Дахин асаах";
+        spawnBurst(window.innerWidth / 2, window.innerHeight * 0.55, 50);
+        showToast("🎂 Хүслээ шивнээд лаагаа үлээлээ!");
+      } else {
+        cakeHint.textContent = "Лаа үлээх";
+        showToast("🕯️ Лаануудыг дахин асаалаа!");
+      }
+    });
+  </script>
+</body>
+</html>
