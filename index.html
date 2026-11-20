@@ -251,6 +251,9 @@
   <div class="container">
     <div class="wand-title">✨ Шидэт саваагаа даллаарай ✨</div>
     <button id="wand-btn" class="wand-btn" type="button">🪄 Саваагаа даллах</button>
+     <button id="soft-music-btn" class="wand-btn" type="button" style="margin-top: 12px; background: linear-gradient(90deg, #f48fb1, #ce93d8); color: #241038;">
+  🎶 Зөөлөн ая тоглуулах
+</button>
 
     <div class="divider"></div>
 
@@ -390,35 +393,135 @@
         showToast("🕯️ Лаануудыг дахин асаалаа!");
       }
     });
-  </script>
-  function playBirthdayMelody() {
-  const AudioCtx = window.AudioContext || window.webkitAudioContext;
-  const ctx = new AudioCtx();
+     const softMusicBtn = document.getElementById("soft-music-btn");
+let softAudioCtx = null;
+let softMusicTimer = null;
+let isSoftPlaying = false;
 
-  // Happy Birthday ноотууд (давтамж Hz, үргэлжлэх хугацаа сек)
-  const notes = [
-    [261.63, 0.25], [261.63, 0.25], [293.66, 0.5], [261.63, 0.5], [349.23, 0.5], [329.63, 0.9],
-    [261.63, 0.25], [261.63, 0.25], [293.66, 0.5], [261.63, 0.5], [392.00, 0.5], [349.23, 0.9],
-    [261.63, 0.25], [261.63, 0.25], [523.25, 0.5], [440.00, 0.5], [349.23, 0.5], [329.63, 0.5], [293.66, 0.9],
-    [466.16, 0.25], [466.16, 0.25], [440.00, 0.5], [349.23, 0.5], [392.00, 0.5], [349.23, 1.0]
+// Зөөлөн төгөлдөр хуур маягийн нэг ноот тоглуулах функц
+function playSoftNote(freq, startTime, duration, volume = 0.08) {
+  if (!softAudioCtx) return;
+
+  const osc = softAudioCtx.createOscillator();
+  const subOsc = softAudioCtx.createOscillator();
+  const gain = softAudioCtx.createGain();
+
+  // Зөөлөн дуугаралт (sine + зөөлөн triangle)
+  osc.type = "sine";
+  osc.frequency.setValueAtTime(freq, startTime);
+
+  subOsc.type = "triangle";
+  subOsc.frequency.setValueAtTime(freq * 2, startTime);
+
+  const subGain = softAudioCtx.createGain();
+  subGain.gain.setValueAtTime(0.18, startTime);
+
+  // Зөөлөн орж, удаан уусч сулардаг envelope
+  gain.gain.setValueAtTime(0.0001, startTime);
+  gain.gain.linearRampToValueAtTime(volume, startTime + 0.06);
+  gain.gain.exponentialRampToValueAtTime(0.0001, startTime + duration);
+
+  osc.connect(gain);
+  subOsc.connect(subGain);
+  subGain.connect(gain);
+  gain.connect(softAudioCtx.destination);
+
+  osc.start(startTime);
+  subOsc.start(startTime);
+  osc.stop(startTime + duration + 0.05);
+  subOsc.stop(startTime + duration + 0.05);
+}
+
+// Зөөлөн, эмэгтэйлэг төрсөн өдрийн аяны давталт
+function startSoftBirthdayLoop() {
+  if (!softAudioCtx) {
+    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+    softAudioCtx = new AudioCtx();
+  }
+  if (softAudioCtx.state === "suspended") {
+    softAudioCtx.resume();
+  }
+
+  // [давтамж Hz, үргэлжлэх хугацаа сек, дараагийн ноот хүртэлх завсар сек]
+  const melody = [
+    [261.63, 0.7, 0.45], // C4
+    [261.63, 0.7, 0.45], // C4
+    [293.66, 1.1, 0.9],  // D4
+    [261.63, 1.1, 0.9],  // C4
+    [349.23, 1.1, 0.9],  // F4
+    [329.63, 1.6, 1.35], // E4
+
+    [261.63, 0.7, 0.45], // C4
+    [261.63, 0.7, 0.45], // C4
+    [293.66, 1.1, 0.9],  // D4
+    [261.63, 1.1, 0.9],  // C4
+    [392.00, 1.1, 0.9],  // G4
+    [349.23, 1.6, 1.35], // F4
+
+    [261.63, 0.7, 0.45], // C4
+    [261.63, 0.7, 0.45], // C4
+    [523.25, 1.1, 0.9],  // C5
+    [440.00, 1.1, 0.9],  // A4
+    [349.23, 1.0, 0.85], // F4
+    [329.63, 1.0, 0.85], // E4
+    [293.66, 1.5, 1.25], // D4
+
+    [466.16, 0.7, 0.45], // Bb4
+    [466.16, 0.7, 0.45], // Bb4
+    [440.00, 1.1, 0.9],  // A4
+    [349.23, 1.1, 0.9],  // F4
+    [392.00, 1.1, 0.9],  // G4
+    [349.23, 1.8, 1.6]   // F4 (зөөлөн төгсгөл)
   ];
 
-  let time = ctx.currentTime;
-  for (const [freq, dur] of notes) {
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    osc.type = "triangle";
-    osc.frequency.setValueAtTime(freq, time);
-    gain.gain.setValueAtTime(0.15, time);
-    gain.gain.exponentialRampToValueAtTime(0.001, time + dur);
-    osc.connect(gain);
-    gain.connect(ctx.destination);
-    osc.start(time);
-    osc.stop(time + dur);
-    time += dur + 0.04;
+  function playOnce() {
+    if (!isSoftPlaying) return;
+    let offset = softAudioCtx.currentTime + 0.08;
+    let totalSec = 0;
+
+    for (const [freq, dur, step] of melody) {
+      playSoftNote(freq, offset, dur, 0.075);
+      offset += step;
+      totalSec += step;
+    }
+
+    softMusicTimer = setTimeout(playOnce, totalSec * 1000 + 800);
+  }
+
+  playOnce();
+}
+
+function stopSoftBirthdayLoop() {
+  clearTimeout(softMusicTimer);
+  softMusicTimer = null;
+  if (softAudioCtx && softAudioCtx.state === "running") {
+    softAudioCtx.suspend();
   }
 }
-  
-  
+
+softMusicBtn.addEventListener("click", () => {
+  if (!isSoftPlaying) {
+    isSoftPlaying = true;
+    softMusicBtn.textContent = "⏸️ Ая зогсоох";
+    startSoftBirthdayLoop();
+    showToast("🎶 Зөөлөн төрсөн өдрийн ая эгшиглэж байна...");
+  } else {
+    isSoftPlaying = false;
+    softMusicBtn.textContent = "🎶 Зөөлөн ая тоглуулах";
+    stopSoftBirthdayLoop();
+    showToast("⏸️ Аяыг түр зогсоолоо");
+  }
+});
+
+// "Саваагаа даллах" товч дарахад ая хараахан эхлээгүй бол зөөлөн аяыг хамт асаана
+wandBtn.addEventListener("click", () => {
+  if (!isSoftPlaying) {
+    isSoftPlaying = true;
+    softMusicBtn.textContent = "⏸️ Ая зогсоох";
+    startSoftBirthdayLoop();
+  }
+});
+
+  </script>
 </body>
 </html>
