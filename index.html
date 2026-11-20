@@ -391,5 +391,34 @@
       }
     });
   </script>
+  function playBirthdayMelody() {
+  const AudioCtx = window.AudioContext || window.webkitAudioContext;
+  const ctx = new AudioCtx();
+
+  // Happy Birthday ноотууд (давтамж Hz, үргэлжлэх хугацаа сек)
+  const notes = [
+    [261.63, 0.25], [261.63, 0.25], [293.66, 0.5], [261.63, 0.5], [349.23, 0.5], [329.63, 0.9],
+    [261.63, 0.25], [261.63, 0.25], [293.66, 0.5], [261.63, 0.5], [392.00, 0.5], [349.23, 0.9],
+    [261.63, 0.25], [261.63, 0.25], [523.25, 0.5], [440.00, 0.5], [349.23, 0.5], [329.63, 0.5], [293.66, 0.9],
+    [466.16, 0.25], [466.16, 0.25], [440.00, 0.5], [349.23, 0.5], [392.00, 0.5], [349.23, 1.0]
+  ];
+
+  let time = ctx.currentTime;
+  for (const [freq, dur] of notes) {
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = "triangle";
+    osc.frequency.setValueAtTime(freq, time);
+    gain.gain.setValueAtTime(0.15, time);
+    gain.gain.exponentialRampToValueAtTime(0.001, time + dur);
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start(time);
+    osc.stop(time + dur);
+    time += dur + 0.04;
+  }
+}
+  
+  
 </body>
 </html>
